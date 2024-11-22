@@ -1,0 +1,15 @@
+@font-face {
+  font-family: 'GOST type A';
+  src: url('/fonts/GOST_type_A.eot');
+  src:
+    local('GOST_type_A'),
+    url('/fonts/GOST_type_A.eot?#iefix') format('embedded-opentype'),
+    url('/fonts/GOST_type_A.woff') format('woff'),
+    url('/fonts/GOST_type_A.ttf') format('truetype');
+  font-weight: normal;
+  font-style: italic;
+}
+
+.clickable {
+  cursor: pointer;
+}

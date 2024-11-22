@@ -1,6 +1,75 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { onMounted, ref } from 'vue'
+import { Pump } from '@/models/pump'
+import { AnalogSensor } from '@/models/analog_sensor'
+import { Container } from '@/models/container'
+import AnalogSensorFaceplate from './AnalogSensorFaceplate.vue'
+
+const ENABLED_COLOR = 'green'
+const DISABLED_COLOR = 'gray'
+
+const GOOD_COLOR = 'green'
+const WARNING_COLOR = 'yellow'
+const ALARM_COLOR = 'red'
+
+const SIMULATION_STEP_SECONDS = 0.5
+
+const pumpN1 = ref<Pump>(new Pump('H1', 5, 8, 1.5))
+const sensorF1 = ref<AnalogSensor>(new AnalogSensor('F1', 'м3/ч', 0, 10))
+const sensorL1 = ref<AnalogSensor>(new AnalogSensor('L1', '%', 0, 100, 10, 20))
+const containerE1 = ref<Container>(new Container(0.5, 0.2))
+
+const analogSensorFaceplate = ref<typeof AnalogSensorFaceplate>()
+
+function init() {
+  sensorF1.value.value = pumpN1.value.currentPerfomance
+  sensorL1.value.value = containerE1.value.level
+}
+
+function doSimulation() {
+  sensorF1.value.value = pumpN1.value.currentPerfomance
+  sensorL1.value.value = containerE1.value.level
+
+  const decrement = (SIMULATION_STEP_SECONDS * sensorF1.value.value) / 3600
+  containerE1.value.volume -= decrement
+}
+
+onMounted(() => {
+  init()
+  setInterval(() => {
+    doSimulation()
+  }, SIMULATION_STEP_SECONDS * 1000)
+})
+
+function enablePump() {
+  if (!pumpN1.value.isEnabled) pumpN1.value.enable()
+}
+
+function translate(
+  x: number,
+  outMin: number,
+  outMax: number,
+  inMin: number = 0,
+  inMax: number = 100,
+) {
+  return ((x - inMin) * (outMax - outMin)) / (inMax - inMin) + outMin
+}
+
+function getBackgroundColorForAnalogSensor(s: AnalogSensor): string | undefined {
+  if (s.isALActive || s.isAHActive) return ALARM_COLOR
+  if (s.isWLActive || s.isWHActive) return WARNING_COLOR
+  return GOOD_COLOR
+}
+
+function openAnalogSensorFaceplate(s: AnalogSensor) {
+  if (!analogSensorFaceplate.value) return
+
+  analogSensorFaceplate.value.open(s)
+}
+</script>
 <template>
   <div class="mnemo_container">
+    <AnalogSensorFaceplate ref="analogSensorFaceplate"></AnalogSensorFaceplate>
     <svg
       width="1280"
       height="720"
@@ -23,9 +92,12 @@
           "
           id="rect10"
           width="20"
-          height="90.000008"
+          :height="translate(containerE1.level, 0, 90)"
           x="127.64582"
-          y="68.758339"
+          :y="translate(containerE1.level, 158.758, 68.758339)"
+          :style="{
+            fill: getBackgroundColorForAnalogSensor(sensorL1),
+          }"
         />
         <path
           style="
@@ -158,13 +230,16 @@
         />
         <circle
           style="
-            fill: #008000;
             stroke: #000000;
             stroke-width: 2;
             stroke-linecap: round;
             stroke-linejoin: round;
             stroke-dasharray: none;
           "
+          @click="enablePump()"
+          :style="{
+            fill: pumpN1.isEnabled && !pumpN1.isStartingFlash ? ENABLED_COLOR : DISABLED_COLOR,
+          }"
           id="path10"
           cx="78.887497"
           cy="161.23866"
@@ -172,7 +247,7 @@
         />
         <ellipse
           style="
-            fill: none;
+            fill: #ffffff;
             stroke: #000000;
             stroke-width: 2.27081;
             stroke-linecap: round;
@@ -281,8 +356,8 @@
             stroke-linejoin: round;
             stroke-dasharray: none;
           "
-          x="30.4249"
-          y="154.81314"
+          x="27"
+          y="154"
           id="text13-4"
         >
           <tspan
@@ -300,10 +375,11 @@
               stroke-width: 0.8;
               stroke-dasharray: none;
             "
-            x="30.4249"
-            y="154.81314"
+            x="30"
+            y="154.5"
+            width="50"
           >
-            10
+            {{ sensorF1.value.toFixed(1) }}
           </tspan>
         </text>
         <ellipse
@@ -431,7 +507,7 @@
             x="129.35849"
             y="36.941666"
           >
-            100
+            {{ sensorL1.value.toFixed(0) }}
           </tspan>
         </text>
         <ellipse
@@ -1013,10 +1089,43 @@
           />
         </g>
       </g>
+
+      <ellipse
+        style="
+          fill: rgba(0, 0, 0, 0);
+          stroke-width: 2.27081;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+          stroke-dasharray: none;
+        "
+        cx="35.362591"
+        cy="143.25815"
+        rx="14.364598"
+        ry="14.364597"
+        class="clickable"
+        @click="openAnalogSensorFaceplate(sensorF1)"
+      />
+
+      <ellipse
+        style="
+          fill: rgba(0, 0, 0, 0);
+          stroke: #000000;
+          stroke-width: 2.27081;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+          stroke-dasharray: none;
+        "
+        cx="129.38765"
+        cy="25.970549"
+        rx="14.364598"
+        ry="14.364597"
+        class="clickable"
+        @click="openAnalogSensorFaceplate(sensorL1)"
+      />
     </svg>
   </div>
 </template>
-<style>
+<style scoped>
 .mnemo_container {
   text-align: center;
 }

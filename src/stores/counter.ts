@@ -1,12 +1,9 @@
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { defineStore } from 'pinia'
+import { AlarmEvent } from '@/models/alarm_event'
 
-export const useCounterStore = defineStore('counter', () => {
-  const count = ref(0)
-  const doubleCount = computed(() => count.value * 2)
-  function increment() {
-    count.value++
-  }
+export const useAppStore = defineStore('appStore', () => {
+  const events = ref<AlarmEvent[]>([])
 
-  return { count, doubleCount, increment }
+  return { events }
 })
