@@ -13,3 +13,21 @@
 .clickable {
   cursor: pointer;
 }
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+#app {
+  display: flex;
+  flex-direction: column;
+  overflow-y: hidden;
+}
+main {
+  flex: 1;
+} /* Элемент будет растянут на всё доступное пространство */
+footer {
+  margin-top: auto;
+}

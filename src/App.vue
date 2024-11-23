@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AppMnemo from './components/AppMnemo.vue'
+import ActiveAlarm from './components/ActiveAlarm.vue'
 </script>
 
 <template>
@@ -13,7 +14,9 @@ import AppMnemo from './components/AppMnemo.vue'
   <main>
     <AppMnemo></AppMnemo>
   </main>
-  <footer></footer>
+  <footer>
+    <ActiveAlarm></ActiveAlarm>
+  </footer>
 </template>
 
 <style scoped>

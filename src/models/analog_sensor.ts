@@ -1,5 +1,5 @@
-import { useAppStore } from '@/stores/counter'
-import { AlarmEvent, AlarmEventType } from './alarm_event'
+import { useAppStore } from '@/stores/appStore'
+import { AlarmEvent, AlarmEventLevel, AlarmEventType } from './alarm_event'
 
 export type HistoryPoint = { timestamp: Date; value: number }
 
@@ -32,7 +32,7 @@ export class AnalogSensor {
       timestamp: new Date(),
       value: newValue,
     })
-    if (this.history.length > 60) this.history.shift()
+    if (this.history.length > 240) this.history.shift()
 
     if (this.AL) {
       this.isALActive = this.checkLimit(this.AL, this.isALActive, true, true)
@@ -42,11 +42,11 @@ export class AnalogSensor {
     }
     if (this.WL) {
       this.isWLActive = this.isWLActive || this.isALActive
-      this.isWLActive = this.checkLimit(this.WL, this.isWLActive)
+      this.isWLActive = this.checkLimit(this.WL, this.isWLActive, true, false)
     }
     if (this.WH) {
       this.isWHActive = this.isWHActive || this.isAHActive
-      this.isWHActive = this.checkLimit(this.WH, this.isWHActive, false)
+      this.isWHActive = this.checkLimit(this.WH, this.isWHActive, false, false)
     }
   }
 
@@ -57,7 +57,14 @@ export class AnalogSensor {
     isAlarm = false,
   ): boolean {
     let limitName = isLowLimit ? 'нижней' : 'верхней'
-    limitName = limitName + ' ' + (isAlarm ? 'аварийной' : 'предупредительной')
+    limitName = limitName + ' ' + (isAlarm ? 'предаварийной' : 'предупредительной')
+
+    let limitLevel: AlarmEventLevel
+    if (isLowLimit) {
+      limitLevel = isAlarm ? AlarmEventLevel.AL : AlarmEventLevel.WL
+    } else {
+      limitLevel = isAlarm ? AlarmEventLevel.AH : AlarmEventLevel.WH
+    }
 
     if (!isLimitActive) {
       if (isLowLimit && this.valueInternal < limit) {
@@ -65,8 +72,9 @@ export class AnalogSensor {
           new AlarmEvent(
             AlarmEventType.PROCESS,
             this.name,
-            `Нарушение ${limitName} границы`,
+            `Нарушение ${limitName} границы ${limit}${this.unitsOfMeasurement}`,
             new Date(),
+            limitLevel,
           ),
         )
         return true
@@ -77,8 +85,9 @@ export class AnalogSensor {
           new AlarmEvent(
             AlarmEventType.PROCESS,
             this.name,
-            `Нарушение ${limitName} границы`,
+            `Нарушение ${limitName} границы ${limit}${this.unitsOfMeasurement}`,
             new Date(),
+            limitLevel,
           ),
         )
         return true

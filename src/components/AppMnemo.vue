@@ -4,22 +4,38 @@ import { Pump } from '@/models/pump'
 import { AnalogSensor } from '@/models/analog_sensor'
 import { Container } from '@/models/container'
 import AnalogSensorFaceplate from './AnalogSensorFaceplate.vue'
-
-const ENABLED_COLOR = 'green'
-const DISABLED_COLOR = 'gray'
-
-const GOOD_COLOR = 'green'
-const WARNING_COLOR = 'yellow'
-const ALARM_COLOR = 'red'
+import PumpFaceplate from './PumpFaceplate.vue'
+import { ColorScheme } from '@/models/color_scheme'
+import { Valve } from '@/models/valve'
+import ValveFaceplate from './ValveFaceplate.vue'
+import { PIDRegulator } from '@/models/PID_regulator'
+import PIDRegulatorFaceplate from './PIDRegulatorFaceplate.vue'
 
 const SIMULATION_STEP_SECONDS = 0.5
 
 const pumpN1 = ref<Pump>(new Pump('H1', 5, 8, 1.5))
 const sensorF1 = ref<AnalogSensor>(new AnalogSensor('F1', 'м3/ч', 0, 10))
+const sensorF2 = ref<AnalogSensor>(new AnalogSensor('F2', 'м3/ч', 0, 15))
 const sensorL1 = ref<AnalogSensor>(new AnalogSensor('L1', '%', 0, 100, 10, 20))
 const containerE1 = ref<Container>(new Container(0.5, 0.2))
+const valveLV1 = ref<Valve>(new Valve('LV1', 10, 0))
+const regulatorLC1 = ref<PIDRegulator>(
+  new PIDRegulator(
+    'LC1',
+    sensorL1.value.unitsOfMeasurement,
+    sensorL1.value.LLM,
+    sensorL1.value.HLM,
+    valveLV1.value.LLM,
+    valveLV1.value.HLM,
+    10,
+    0.05,
+  ),
+)
 
 const analogSensorFaceplate = ref<typeof AnalogSensorFaceplate>()
+const pumpFaceplate = ref<typeof PumpFaceplate>()
+const valveFaceplate = ref<typeof ValveFaceplate>()
+const pidRegulatorFaceplate = ref<typeof PIDRegulatorFaceplate>()
 
 function init() {
   sensorF1.value.value = pumpN1.value.currentPerfomance
@@ -29,9 +45,14 @@ function init() {
 function doSimulation() {
   sensorF1.value.value = pumpN1.value.currentPerfomance
   sensorL1.value.value = containerE1.value.level
+  valveLV1.value.value = regulatorLC1.value.LMN
+  sensorF2.value.value = valveLV1.value.currentPerfomance
+  regulatorLC1.value.PV = sensorL1.value.value
 
-  const decrement = (SIMULATION_STEP_SECONDS * sensorF1.value.value) / 3600
-  containerE1.value.volume -= decrement
+  const increment = (SIMULATION_STEP_SECONDS * (sensorF2.value.value - sensorF1.value.value)) / 3600
+  containerE1.value.volume += increment
+
+  pumpN1.value.isBlocked = sensorL1.value.isALActive
 }
 
 onMounted(() => {
@@ -56,9 +77,9 @@ function translate(
 }
 
 function getBackgroundColorForAnalogSensor(s: AnalogSensor): string | undefined {
-  if (s.isALActive || s.isAHActive) return ALARM_COLOR
-  if (s.isWLActive || s.isWHActive) return WARNING_COLOR
-  return GOOD_COLOR
+  if (s.isALActive || s.isAHActive) return ColorScheme.ALARM_COLOR
+  if (s.isWLActive || s.isWHActive) return ColorScheme.WARNING_COLOR
+  return ColorScheme.GOOD_COLOR
 }
 
 function openAnalogSensorFaceplate(s: AnalogSensor) {
@@ -66,10 +87,37 @@ function openAnalogSensorFaceplate(s: AnalogSensor) {
 
   analogSensorFaceplate.value.open(s)
 }
+
+function openPumpFaceplate(p: Pump) {
+  if (!pumpFaceplate.value) return
+
+  pumpFaceplate.value.open(p)
+}
+
+function getValveBackgroundColor(v: Valve): string {
+  if (v.isClosed) return ColorScheme.DISABLED_COLOR
+  else if (v.isOpened) return ColorScheme.ENABLED_COLOR
+  return ColorScheme.INTERMEDIAE_COLOR
+}
+
+function openValveFaceplate(v: Valve) {
+  if (!valveFaceplate.value) return
+
+  valveFaceplate.value.open(v)
+}
+
+function openPIDRegulatorFaceplate(r: PIDRegulator) {
+  if (!pidRegulatorFaceplate.value) return
+
+  pidRegulatorFaceplate.value.open(r)
+}
 </script>
 <template>
   <div class="mnemo_container">
     <AnalogSensorFaceplate ref="analogSensorFaceplate"></AnalogSensorFaceplate>
+    <PumpFaceplate ref="pumpFaceplate"></PumpFaceplate>
+    <ValveFaceplate ref="valveFaceplate"></ValveFaceplate>
+    <PIDRegulatorFaceplate ref="pidRegulatorFaceplate"></PIDRegulatorFaceplate>
     <svg
       width="1280"
       height="720"
@@ -238,7 +286,10 @@ function openAnalogSensorFaceplate(s: AnalogSensor) {
           "
           @click="enablePump()"
           :style="{
-            fill: pumpN1.isEnabled && !pumpN1.isStartingFlash ? ENABLED_COLOR : DISABLED_COLOR,
+            fill:
+              pumpN1.isEnabled && !pumpN1.isStartingFlash
+                ? ColorScheme.ENABLED_COLOR
+                : ColorScheme.DISABLED_COLOR,
           }"
           id="path10"
           cx="78.887497"
@@ -593,6 +644,7 @@ function openAnalogSensorFaceplate(s: AnalogSensor) {
             "
             x="215.18828"
             y="24.126381"
+            v-if="regulatorLC1.isEnabled"
           >
             A
           </tspan>
@@ -630,7 +682,7 @@ function openAnalogSensorFaceplate(s: AnalogSensor) {
             x="257.68665"
             y="58.907772"
           >
-            100%
+            {{ valveLV1.value.toFixed(0) }}%
           </tspan>
         </text>
         <text
@@ -668,7 +720,7 @@ function openAnalogSensorFaceplate(s: AnalogSensor) {
             x="198.10271"
             y="36.941666"
           >
-            100
+            {{ regulatorLC1.displayValue }}
           </tspan>
         </text>
         <text
@@ -746,20 +798,19 @@ function openAnalogSensorFaceplate(s: AnalogSensor) {
         <g id="g17" transform="translate(0.62519833,-41.450748)">
           <path
             style="
-              fill: #008000;
               stroke: none;
               stroke-width: 2;
               stroke-linecap: round;
               stroke-linejoin: round;
               stroke-dasharray: none;
             "
+            :style="{ fill: getValveBackgroundColor(valveLV1) }"
             d="M 228.35827,116.48207 V 104.84316 L 244.00001,115"
             id="path14-5"
             sodipodi:nodetypes="ccc"
           />
           <path
             style="
-              fill: #008000;
               stroke: none;
               stroke-width: 2;
               stroke-linecap: round;
@@ -769,10 +820,10 @@ function openAnalogSensorFaceplate(s: AnalogSensor) {
             d="m 228.35827,115.48692 v 9.2875 L 244.00001,115"
             id="path14-7-2"
             sodipodi:nodetypes="ccc"
+            :style="{ fill: getValveBackgroundColor(valveLV1) }"
           />
           <path
             style="
-              fill: #008000;
               stroke: none;
               stroke-width: 2;
               stroke-linecap: round;
@@ -782,10 +833,10 @@ function openAnalogSensorFaceplate(s: AnalogSensor) {
             d="M 259.90921,116 V 104.84316 L 244.00001,115"
             id="path14-3-2"
             sodipodi:nodetypes="ccc"
+            :style="{ fill: getValveBackgroundColor(valveLV1) }"
           />
           <path
             style="
-              fill: #008000;
               stroke: none;
               stroke-width: 2;
               stroke-linecap: round;
@@ -795,6 +846,7 @@ function openAnalogSensorFaceplate(s: AnalogSensor) {
             d="m 259.90921,115.48692 v 9.2875 L 244.00001,115"
             id="path14-7-9-2"
             sodipodi:nodetypes="ccc"
+            :style="{ fill: getValveBackgroundColor(valveLV1) }"
           />
         </g>
         <path
@@ -986,7 +1038,7 @@ function openAnalogSensorFaceplate(s: AnalogSensor) {
             x="301.50763"
             y="54.813053"
           >
-            10
+            {{ sensorF2.value.toFixed(1) }}
           </tspan>
         </text>
         <path
@@ -1121,6 +1173,66 @@ function openAnalogSensorFaceplate(s: AnalogSensor) {
         ry="14.364597"
         class="clickable"
         @click="openAnalogSensorFaceplate(sensorL1)"
+      />
+
+      <circle
+        style="
+          fill: rgba(0, 0, 0, 0);
+          stroke-width: 2;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+          stroke-dasharray: none;
+        "
+        cx="78.887497"
+        cy="161.25815"
+        r="17.5"
+        @click="openPumpFaceplate(pumpN1)"
+        class="clickable"
+      />
+
+      <ellipse
+        style="
+          fill: rgba(0, 0, 0, 0);
+          stroke: #000000;
+          stroke-width: 2.27081;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+          stroke-dasharray: none;
+        "
+        cx="306.44534"
+        cy="43.25806"
+        rx="14.364598"
+        ry="14.364597"
+        class="clickable"
+        @click="openAnalogSensorFaceplate(sensorF2)"
+      />
+
+      <rect
+        style="fill: rgba(0, 0, 0, 0)"
+        id="rect1"
+        width="32.165115"
+        height="42.756493"
+        x="228.62027"
+        y="42.243507"
+        class="clickable"
+        @click="openValveFaceplate(valveLV1)"
+      />
+
+      <ellipse
+        style="
+          fill: rgba(0, 0, 0, 0);
+          stroke: #000000;
+          stroke-width: 2.27081;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+          stroke-dasharray: none;
+        "
+        cx="198.13187"
+        cy="25.970549"
+        rx="14.364598"
+        ry="14.364597"
+        class="clickable"
+        @click="openPIDRegulatorFaceplate(regulatorLC1)"
       />
     </svg>
   </div>
