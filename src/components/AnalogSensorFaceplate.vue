@@ -46,7 +46,6 @@ watch(
   (newData) => {
     if (!chartInstance) return
 
-    // @ts-expect-error looks like chart data missing some required attrs, but working fine anyway
     chartInstance.data = newData
     chartInstance.update()
   },
@@ -65,7 +64,6 @@ function open(s: AnalogSensor) {
 
   if (chartInstance) chartInstance.destroy()
 
-  // @ts-expect-error looks like chart data missing some required attrs, but working fine anyway
   chartInstance = new Chart(chartCanvas.value, {
     type: 'line',
     data: chartData.value,

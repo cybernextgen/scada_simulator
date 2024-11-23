@@ -128,6 +128,7 @@ function openPIDRegulatorFaceplate(r: PIDRegulator) {
       xmlns:svg="http://www.w3.org/2000/svg"
     >
       <defs id="defs1" />
+
       <g inkscape:label="Слой 1" inkscape:groupmode="layer" id="layer1">
         <rect
           style="
@@ -144,6 +145,7 @@ function openPIDRegulatorFaceplate(r: PIDRegulator) {
           x="127.64582"
           :y="translate(containerE1.level, 158.758, 68.758339)"
           :style="{
+            //@ts-ignore
             fill: getBackgroundColorForAnalogSensor(sensorL1),
           }"
         />
@@ -1155,7 +1157,10 @@ function openPIDRegulatorFaceplate(r: PIDRegulator) {
         rx="14.364598"
         ry="14.364597"
         class="clickable"
-        @click="openAnalogSensorFaceplate(sensorF1)"
+        @click="
+          //@ts-ignore
+          openAnalogSensorFaceplate(sensorF1)
+        "
       />
 
       <ellipse
@@ -1172,7 +1177,10 @@ function openPIDRegulatorFaceplate(r: PIDRegulator) {
         rx="14.364598"
         ry="14.364597"
         class="clickable"
-        @click="openAnalogSensorFaceplate(sensorL1)"
+        @click="
+          //@ts-ignore
+          openAnalogSensorFaceplate(sensorL1)
+        "
       />
 
       <circle
@@ -1186,7 +1194,10 @@ function openPIDRegulatorFaceplate(r: PIDRegulator) {
         cx="78.887497"
         cy="161.25815"
         r="17.5"
-        @click="openPumpFaceplate(pumpN1)"
+        @click="
+          //@ts-ignore
+          openPumpFaceplate(pumpN1)
+        "
         class="clickable"
       />
 
@@ -1204,7 +1215,10 @@ function openPIDRegulatorFaceplate(r: PIDRegulator) {
         rx="14.364598"
         ry="14.364597"
         class="clickable"
-        @click="openAnalogSensorFaceplate(sensorF2)"
+        @click="
+          //@ts-ignore
+          openAnalogSensorFaceplate(sensorF2)
+        "
       />
 
       <rect
@@ -1232,7 +1246,10 @@ function openPIDRegulatorFaceplate(r: PIDRegulator) {
         rx="14.364598"
         ry="14.364597"
         class="clickable"
-        @click="openPIDRegulatorFaceplate(regulatorLC1)"
+        @click="
+          //@ts-ignore
+          openPIDRegulatorFaceplate(regulatorLC1)
+        "
       />
     </svg>
   </div>

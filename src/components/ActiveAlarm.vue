@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import dayjs from 'dayjs'
 import { useAppStore } from '@/stores/appStore'
 import { AlarmEvent, AlarmEventLevel, AlarmEventType } from '@/models/alarm_event'

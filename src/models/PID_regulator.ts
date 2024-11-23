@@ -1,7 +1,5 @@
 import { useAppStore } from '@/stores/appStore'
 import { AlarmEvent, AlarmEventType } from './alarm_event'
-import dayjs from 'dayjs'
-import type { HistoryPoint } from './analog_sensor'
 
 export class PIDRegulator {
   private isEnabledInternal: boolean = false
